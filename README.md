@@ -14,6 +14,7 @@ backend.
 - QR preview, live mobile/web scanning, image fallback, and unknown safety state
 - Email text analysis
 - On-device password strength analysis
+- Manual, read-only Windows process check for processes running from Temp or Downloads folders
 - AI assistant integration for local/Ollama or OpenAI providers
 - Scan history, search, details, deletion, and export
 - SQLite development database and PostgreSQL production support
@@ -26,6 +27,10 @@ backend.
 - Web
 - Flutter source support for additional platforms is present, but CI is currently
   focused on the tested Android, Windows, and web workflows
+
+The process check is available only in the Windows desktop app. It uses a
+location heuristic, may flag legitimate software, and is not a full malware
+scanner or a guarantee that a process is malicious or safe.
 
 ## Technology stack
 

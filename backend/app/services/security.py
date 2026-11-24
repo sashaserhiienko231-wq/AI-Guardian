@@ -1,11 +1,137 @@
 import math
+import os
 import re
 import string
 import socket
+import time
 from ipaddress import ip_address, ip_network
 from urllib.parse import urlparse
 
+import httpx
+
 SUSPICIOUS_SHORTENERS = {"bit.ly", "tinyurl.com", "t.co", "is.gd", "cutt.ly", "goo.gl"}
+
+SIMILAR_BRANDS = {
+    "paypal": ("paypal.com",),
+    "google": ("google.com", "accounts.google.com"),
+    "microsoft": ("microsoft.com", "live.com", "office.com"),
+    "apple": ("apple.com", "icloud.com"),
+    "amazon": ("amazon.com",),
+    "facebook": ("facebook.com", "meta.com"),
+    "instagram": ("instagram.com",),
+    "netflix": ("netflix.com",),
+    "coinbase": ("coinbase.com",),
+    "binance": ("binance.com",),
+}
+
+_SAFE_BROWSING_CACHE: dict[str, tuple[float, bool]] = {}
+_SAFE_BROWSING_CACHE_SECONDS = 300
+
+
+def _levenshtein(left: str, right: str) -> int:
+    previous = list(range(len(right) + 1))
+    for i, left_char in enumerate(left, 1):
+        current = [i]
+        for j, right_char in enumerate(right, 1):
+            current.append(min(current[-1] + 1, previous[j] + 1,
+                                previous[j - 1] + (left_char != right_char)))
+        previous = current
+    return previous[-1]
+
+
+def _loaded_blocklist() -> set[str]:
+    domains: set[str] = set()
+    path = os.getenv("PHISHING_BLOCKLIST_PATH")
+    if not path:
+        return domains
+    try:
+        for line in open(path, "r", encoding="utf-8"):
+            domain = line.strip().lower().rstrip(".")
+            if domain and not domain.startswith("#"):
+                domains.add(domain)
+    except OSError:
+        return domains
+    return domains
+
+
+def _google_safe_browsing_check(url: str) -> bool:
+    api_key = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()
+    if not api_key:
+        return False
+    cached = _SAFE_BROWSING_CACHE.get(url)
+    now = time.monotonic()
+    if cached and now - cached[0] < _SAFE_BROWSING_CACHE_SECONDS:
+        return cached[1]
+    try:
+        response = httpx.post(
+            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={api_key}",
+            json={
+                "client": {"clientId": "ai-guardian", "clientVersion": "2.0.0"},
+                "threatInfo": {
+                    "threatTypes": ["MALWARE_THREAT", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE_THREAT"],
+                    "platformTypes": ["ANY_PLATFORM"],
+                    "threatEntryTypes": ["URL"],
+                    "threatEntries": [{"url": url}],
+                },
+            },
+            timeout=float(os.getenv("AI_TIMEOUT_SECONDS", "10")),
+        )
+        response.raise_for_status()
+        dangerous = bool(response.json().get("matches"))
+    except (httpx.HTTPError, httpx.TimeoutException, ValueError):
+        dangerous = False
+    _SAFE_BROWSING_CACHE[url] = (now, dangerous)
+    return dangerous
+
+
+def check_phishing_blocklists(raw_url: str, host: str) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    host = host.lower().rstrip(".")
+    for blocked in _loaded_blocklist():
+        if host == blocked or host.endswith("." + blocked):
+            findings.append({
+                "code": "LOCAL_BLOCKLIST",
+                "title": "Listed by local phishing blocklist",
+                "explanation": f"The hostname is present in the configured phishing blocklist.",
+            })
+            break
+    if _google_safe_browsing_check(raw_url):
+        findings.append({
+            "code": "SAFE_BROWSING",
+            "title": "Known phishing or unsafe URL",
+            "explanation": "Google Safe Browsing reported this URL as unsafe.",
+        })
+    return findings
+
+
+def find_brand_similarity(host: str) -> list[dict[str, str]]:
+    host = host.lower().rstrip(".")
+    findings: list[dict[str, str]] = []
+    labels = host.split(".")
+    registered = ".".join(labels[-2:]) if len(labels) >= 2 else host
+    for brand, official_domains in SIMILAR_BRANDS.items():
+        if registered in official_domains or any(host == domain or host.endswith("." + domain)
+                                                 for domain in official_domains):
+            continue
+        candidates = set(labels[:-1] + [registered])
+        candidates.update(part.strip("-") for label in labels for part in label.split("-"))
+        for candidate in candidates:
+            if len(candidate) < 4:
+                continue
+            if brand in candidate:
+                distance = 0
+            else:
+                distance = _levenshtein(candidate, brand)
+            if brand in candidate or (len(candidate) >= len(brand) - 1 and distance <= 1):
+                findings.append({
+                    "code": "BRAND_IMPERSONATION",
+                    "title": f"Possible {brand.title()} impersonation",
+                    "explanation": f"The hostname resembles the trusted brand '{brand}' but is not on its official domain.",
+                })
+                break
+        if findings:
+            break
+    return findings
 
 
 PRIVATE_NETWORKS = (
@@ -126,6 +252,12 @@ def analyze_url(raw_url: str) -> dict:
         add(12, "UNUSUAL_HOST_CHARS", "Unusual hostname characters", "The hostname contains uncommon characters.")
     if not indicators:
         actions.append("The URL has no rule-based indicators; verify the sender and destination before visiting.")
+
+    for finding in check_phishing_blocklists(text, host):
+        add(70 if finding["code"] == "LOCAL_BLOCKLIST" else 80,
+            finding["code"], finding["title"], finding["explanation"])
+    for finding in find_brand_similarity(host):
+        add(35, finding["code"], finding["title"], finding["explanation"])
     if parsed.scheme == "http":
         actions.append("Prefer HTTPS or use a known official page.")
     actions.extend(["Do not enter credentials or payment details.", "Open only after confirming the source."])
