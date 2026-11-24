@@ -2,13 +2,13 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "plugins/file_selector_windows/Debug/file_selector_windows_plugin.dll"
+			"path" : "plugins/file_selector_windows/Profile/file_selector_windows_plugin.dll"
 		},
 		{
-			"path" : "plugins/file_selector_windows/Debug/file_selector_windows_plugin.lib"
+			"path" : "plugins/file_selector_windows/Profile/file_selector_windows_plugin.lib"
 		},
 		{
-			"path" : "plugins/file_selector_windows/Debug/file_selector_windows_plugin.pdb"
+			"path" : "plugins/file_selector_windows/Profile/file_selector_windows_plugin.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -99,12 +99,6 @@
 			{
 				"command" : 5,
 				"file" : 2,
-				"line" : 45,
-				"parent" : 6
-			},
-			{
-				"command" : 5,
-				"file" : 2,
 				"line" : 44,
 				"parent" : 6
 			},
@@ -144,7 +138,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Zi /Ob0 /Od /RTC1 -std:c++17"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17"
 				},
 				{
 					"backtrace" : 7,
@@ -175,14 +169,10 @@
 				},
 				{
 					"backtrace" : 12,
-					"define" : "_DEBUG"
-				},
-				{
-					"backtrace" : 13,
 					"define" : "_HAS_EXCEPTIONS=0"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 13,
 					"define" : "_HAS_EXCEPTIONS=1"
 				},
 				{
@@ -209,7 +199,7 @@
 			{
 				"backtraces" : 
 				[
-					15
+					14
 				],
 				"standard" : "17"
 			},
@@ -226,12 +216,12 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 5,
-			"id" : "flutter_assemble::@2bb09fbb03a373b2cb34"
-		},
-		{
 			"backtrace" : 2,
 			"id" : "flutter_wrapper_plugin::@2bb09fbb03a373b2cb34"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "flutter_assemble::@2bb09fbb03a373b2cb34"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
@@ -243,12 +233,12 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/machine:x64 /debug /INCREMENTAL",
+				"fragment" : "/machine:x64 /INCREMENTAL:NO",
 				"role" : "flags"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "..\\..\\flutter\\Debug\\flutter_wrapper_plugin.lib",
+				"fragment" : "..\\..\\flutter\\Profile\\flutter_wrapper_plugin.lib",
 				"role" : "libraries"
 			},
 			{

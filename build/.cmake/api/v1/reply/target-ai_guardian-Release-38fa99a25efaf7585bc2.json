@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "runner/Profile/ai_guardian.exe"
+			"path" : "runner/Release/ai_guardian.exe"
 		},
 		{
-			"path" : "runner/Profile/ai_guardian.pdb"
+			"path" : "runner/Release/ai_guardian.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -371,12 +371,12 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 11,
-			"id" : "flutter_assemble::@2bb09fbb03a373b2cb34"
-		},
-		{
 			"backtrace" : 4,
 			"id" : "flutter_wrapper_app::@2bb09fbb03a373b2cb34"
+		},
+		{
+			"backtrace" : 11,
+			"id" : "flutter_assemble::@2bb09fbb03a373b2cb34"
 		},
 		{
 			"backtrace" : 8,
@@ -393,7 +393,7 @@
 		[
 			{
 				"backtrace" : 3,
-				"path" : "F:/\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441 \u0445\u0440\u043e\u043c\u0430/proctoring_app/build/runner/Profile"
+				"path" : "F:/\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441 \u0445\u0440\u043e\u043c\u0430/proctoring_app/build/runner/Release"
 			}
 		],
 		"prefix" : 
@@ -419,7 +419,7 @@
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\flutter\\Profile\\flutter_wrapper_app.lib",
+				"fragment" : "..\\flutter\\Release\\flutter_wrapper_app.lib",
 				"role" : "libraries"
 			},
 			{
@@ -429,7 +429,7 @@
 			},
 			{
 				"backtrace" : 8,
-				"fragment" : "..\\plugins\\file_selector_windows\\Profile\\file_selector_windows_plugin.lib",
+				"fragment" : "..\\plugins\\file_selector_windows\\Release\\file_selector_windows_plugin.lib",
 				"role" : "libraries"
 			},
 			{
