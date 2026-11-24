@@ -7,7 +7,8 @@
 - Visibility: PUBLIC
 - Default branch: main
 - Initial commit: `0020cb74fd2d9dbaff802ebb16b0c2a83d11ccd7`
-- Tracked files: 196
+- Publication commit: `ef9c1c7a7fa95ce4d44f4e89d61a316a1810b79f`
+- Tracked files: 197
 
 ## Publication status
 
@@ -38,6 +39,8 @@
 - Rerun status: PASSED
 - Rerun URL: [GitHub Actions run 45405125069](https://github.com/sashaserhiienko231-wq/AI-Guardian/actions/runs/45405125069)
 - Rerun result: success
+- Final push run: [GitHub Actions run 45405594007](https://github.com/sashaserhiienko231-wq/AI-Guardian/actions/runs/45405594007)
+- Final push run result: PASSED
 
 ## Secret and signing audit
 
