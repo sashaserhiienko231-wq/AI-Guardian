@@ -85,3 +85,26 @@ def test_nonstandard_public_port_rejected():
     import pytest
     with pytest.raises(ValueError):
         validate_public_url("https://example.com:8443/login")
+
+
+def test_brand_similarity_detected(monkeypatch):
+    monkeypatch.delenv("GOOGLE_SAFE_BROWSING_API_KEY", raising=False)
+    monkeypatch.delenv("PHISHING_BLOCKLIST_PATH", raising=False)
+    result = analyze_url("https://paypa1-secure-login.example.com")
+    assert "BRAND_IMPERSONATION" in [item["code"] for item in result["indicators"]]
+
+
+def test_official_brand_domain_not_flagged(monkeypatch):
+    monkeypatch.delenv("GOOGLE_SAFE_BROWSING_API_KEY", raising=False)
+    monkeypatch.delenv("PHISHING_BLOCKLIST_PATH", raising=False)
+    result = analyze_url("https://accounts.paypal.com/login")
+    assert "BRAND_IMPERSONATION" not in [item["code"] for item in result["indicators"]]
+
+
+def test_local_blocklist_detected(monkeypatch, tmp_path):
+    blocklist = tmp_path / "phishing-domains.txt"
+    blocklist.write_text("known-phishing.example\n", encoding="utf-8")
+    monkeypatch.setenv("PHISHING_BLOCKLIST_PATH", str(blocklist))
+    monkeypatch.delenv("GOOGLE_SAFE_BROWSING_API_KEY", raising=False)
+    result = analyze_url("https://known-phishing.example/login")
+    assert "LOCAL_BLOCKLIST" in [item["code"] for item in result["indicators"]]
