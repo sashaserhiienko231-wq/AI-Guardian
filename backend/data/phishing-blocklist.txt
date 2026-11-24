@@ -1,0 +1,1 @@
+# One phishing hostname per line. Subdomains are matched automatically.

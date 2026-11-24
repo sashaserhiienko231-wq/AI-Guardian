@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const baseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -293,7 +294,7 @@ class _UrlScannerPageState extends ConsumerState<UrlScannerPage> {
         FilledButton.icon(onPressed: loading ? null : scan, icon: const Icon(Icons.radar), label: Text(isUk ? 'Сканувати' : 'Scan URL')),
         if (loading) const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()),
         if (error != null) _ErrorCard(message: error!, onRetry: scan),
-        if (result != null) _ScanResult(result: result!),
+        if (result != null) _ScanResult(result: result!, link: controller.text.trim()),
       ]),
     );
   }
@@ -434,7 +435,7 @@ class _QrPageState extends ConsumerState<QrPage> {
       const SizedBox(height: 12),
       FilledButton.icon(onPressed: scan, icon: const Icon(Icons.qr_code_scanner), label: const Text('Analyze preview')),
       if (error != null) _ErrorCard(message: error!, onRetry: scan),
-      if (result != null) _ScanResult(result: result!),
+      if (result != null) _ScanResult(result: result!, link: controller.text.trim()),
     ]),
   );
 }
@@ -676,8 +677,60 @@ class SettingsPage extends ConsumerWidget {
 }
 
 class _ScanResult extends StatelessWidget {
-  const _ScanResult({required this.result});
+  const _ScanResult({required this.result, this.link});
   final Map<String, dynamic> result;
+  final String? link;
+
+  Future<void> _openLink(BuildContext context) async {
+    final uri = Uri.tryParse(link ?? '');
+    if (uri == null || !uri.hasScheme || !{'http', 'https'}.contains(uri.scheme)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This result does not contain a safe web link.')),
+      );
+      return;
+    }
+
+    final score = (result['risk_score'] as num).toInt();
+    if (score >= 40) {
+      final indicators = (result['indicators'] as List<dynamic>? ?? [])
+          .map((item) => item['title'] as String)
+          .toList();
+      final reasons = indicators.isNotEmpty
+          ? indicators.join(', ')
+          : ((result['explanations'] as List<dynamic>? ?? []).join(', '));
+      final proceed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 36),
+          title: const Text('Suspicious link detected'),
+          content: Text(
+            'We found this link suspicious for: ${reasons.isEmpty ? 'potential phishing indicators' : reasons}.\n\n'
+            'Are you sure you want to proceed?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Proceed'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the link.')),
+        );
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final score = result['risk_score'] as num;
@@ -710,6 +763,14 @@ class _ScanResult extends StatelessWidget {
         Text('Probabilistic classification: ${result['ml_prediction']['prediction']}'),
         Text('Confidence: ${result['ml_prediction']['confidence']}'),
         const Text('This is not a confirmed threat.'),
+      ],
+      if (link != null) ...[
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () => _openLink(context),
+          icon: const Icon(Icons.open_in_new),
+          label: Text(score >= 40 ? 'Review and open link' : 'Open link'),
+        ),
       ],
     ])));
   }
