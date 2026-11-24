@@ -1,6 +1,11 @@
 # Security
 
 - Password analysis is entirely local in Flutter. Password values are never sent or persisted.
+- The Windows process check is manual and read-only. It reports process names and
+  IDs running from Temp or Downloads directories; executable paths are only
+  inspected locally, and process data is not sent to the backend. This
+  location-based heuristic can produce false positives and is not a malware
+  verdict. Other platforms cannot inspect unrelated processes.
 - Email bodies are not persisted.
 - The backend does not fetch arbitrary URLs. URL analysis parses the supplied text only.
 - HTTP URLs are penalized; HTTPS is not treated as proof of legitimacy.

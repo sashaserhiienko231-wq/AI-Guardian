@@ -2,10 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'services/process_scanner.dart';
 
 const baseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -64,6 +67,7 @@ class AiGuardianApp extends ConsumerWidget {
             GoRoute(path: '/history', builder: (_, _) => const HistoryPage()),
             GoRoute(path: '/learning', builder: (_, _) => const LearningPage()),
             GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+            GoRoute(path: '/processes', builder: (_, _) => const ProcessSafetyPage()),
           ],
         ),
       ],
@@ -668,11 +672,137 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isUk = ref.watch(localeProvider);
     return PageScaffold(title: isUk ? 'Налаштування' : 'Settings', child: Column(children: [
+      Card(child: ListTile(
+        leading: const Icon(Icons.monitor_heart_outlined),
+        title: const Text('Windows process safety check'),
+        subtitle: const Text('Manually review processes running from risky locations'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => context.go('/processes'),
+      )),
       Card(child: SwitchListTile(title: const Text('Dark theme'), value: true, onChanged: (_) {})),
       Card(child: SwitchListTile(title: const Text('Ukrainian interface'), value: isUk, onChanged: (value) => ref.read(localeProvider.notifier).setLocale(value))),
       const Card(child: ListTile(title: Text('Guest mode'), subtitle: Text('No account or password is required.'))),
       const Card(child: ListTile(title: Text('Retention'), subtitle: Text('Scan history retention is configured on the backend.'))),
     ]));
+  }
+}
+
+class ProcessSafetyPage extends StatefulWidget {
+  const ProcessSafetyPage({super.key});
+
+  @override
+  State<ProcessSafetyPage> createState() => _ProcessSafetyPageState();
+}
+
+class _ProcessSafetyPageState extends State<ProcessSafetyPage> {
+  final ProcessScanner scanner = ProcessScanner();
+  ProcessScanReport? report;
+  String? error;
+  bool scanning = false;
+
+  Future<void> scan() async {
+    setState(() {
+      scanning = true;
+      error = null;
+      report = null;
+    });
+    try {
+      final result = await scanner.scan();
+      if (mounted) setState(() => report = result);
+    } on PlatformException catch (exception) {
+      if (mounted) {
+        setState(() => error = exception.message ?? 'Windows could not read process information.');
+      }
+    } catch (exception) {
+      if (mounted) setState(() => error = exception.toString());
+    } finally {
+      if (mounted) setState(() => scanning = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageScaffold(
+      title: 'Process safety check',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Card(
+            child: ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text('Windows only · manual · read-only'),
+              subtitle: Text(
+                'This check flags processes running from your Temp or Downloads folders. '
+                'That location can be a warning sign, but legitimate apps can run there too. '
+                'Windows may restrict access to some processes. A clean result does not prove that the device is safe. '
+                'Process details stay on this device.',
+              ),
+            ),
+          ),
+          if (!ProcessScanner.isSupported)
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.desktop_windows_outlined),
+                title: Text('Not available on this platform'),
+                subtitle: Text(
+                  'Android, iOS, macOS, and web apps cannot inspect unrelated processes. '
+                  'Use the Windows desktop app for this check.',
+                ),
+              ),
+            )
+          else ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: scanning ? null : scan,
+              icon: scanning
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.search),
+              label: Text(scanning ? 'Scanning processes…' : 'Scan running processes'),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              _ErrorCard(message: error!, onRetry: scan),
+            ],
+            if (report != null && report!.findings.isEmpty)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.check_circle_outline, color: Colors.green),
+                  title: Text('No processes matched this check'),
+                  subtitle: Text('Some processes may not be readable. This is not a full malware scan or a guarantee that the device is safe.'),
+                ),
+              ),
+            if (report != null && report!.findings.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Card(
+                color: const Color(0xFF3B2517),
+                child: ListTile(
+                  leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  title: Text('${report!.findings.length} process(es) need review'),
+                  subtitle: Text(
+                    report!.unreadableProcesses == 0
+                        ? 'Check whether you recognize these programs and where they came from.'
+                        : '${report!.unreadableProcesses} other process(es) could not be inspected.',
+                  ),
+                ),
+              ),
+              ...report!.findings.map(
+                (finding) => Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.running_with_errors, color: Colors.orange),
+                    title: Text(finding.name),
+                    subtitle: Text('PID ${finding.processId} · ${finding.reason}'),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
   }
 }
 
