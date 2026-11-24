@@ -35,7 +35,9 @@
   - Repository Markdown lint configuration added
   - Flutter pinned to version 3.41.5
   - Checkout configured with `fetch-depth: 0` for Flutter and Gitleaks jobs
-- Rerun status: NOT TESTED yet until the fix commit is pushed
+- Rerun status: PASSED
+- Rerun URL: [GitHub Actions run 45405125069](https://github.com/sashaserhiienko231-wq/AI-Guardian/actions/runs/45405125069)
+- Rerun result: success
 
 ## Secret and signing audit
 
