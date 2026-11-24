@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Platform, OS, app version, and backend configuration.
+  - type: textarea
+    id: secrets
+    attributes:
+      label: Sensitive data check
+      description: Do not attach API keys, passwords, personal data, or private files.

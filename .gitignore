@@ -1,0 +1,68 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Flutter and Dart
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/windows/flutter/ephemeral/
+apps/mobile/.idea/
+apps/mobile/*.iml
+apps/mobile/android/*.iml
+
+# Android signing and local configuration
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+.gradle/
+local.properties
+apps/mobile/android/local.properties
+key.properties
+android/key.properties
+*.jks
+*.keystore
+
+# Android and release build output
+*.apk
+*.aab
+artifacts/
+
+# Local databases and user data
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+backend/*.sqlite
+
+# Logs and operating-system files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.code-workspace

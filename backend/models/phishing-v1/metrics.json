@@ -1,0 +1,35 @@
+{
+  "precision": 0.9863127535806814,
+  "recall": 0.9974787423373541,
+  "f1": 0.9918643234607349,
+  "roc_auc": 0.996793813437916,
+  "confusion_matrix": [
+    [
+      14862,
+      280
+    ],
+    [
+      51,
+      20177
+    ]
+  ],
+  "validation_confusion_matrix": [
+    [
+      14832,
+      310
+    ],
+    [
+      45,
+      20182
+    ]
+  ],
+  "train_rows": 165056,
+  "validation_rows": 35369,
+  "test_rows": 35370,
+  "class_counts": {
+    "0": 100945,
+    "1": 134850
+  },
+  "label_semantics": "Dataset label 1=legitimate, 0=phishing.",
+  "feature_source": "URL-derived features"
+}
