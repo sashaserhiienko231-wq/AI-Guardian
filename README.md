@@ -13,6 +13,7 @@ backend.
 - URL analysis with heuristic indicators, SSRF protection, and trained ML inference
 - QR preview, live mobile/web scanning, image fallback, and unknown safety state
 - Email text analysis
+- Optional Gmail add-on for user-triggered scanning of the currently open message
 - On-device password strength analysis
 - Manual, read-only Windows process check for processes running from Temp or Downloads folders
 - AI assistant integration for local/Ollama or OpenAI providers
@@ -31,6 +32,10 @@ backend.
 The process check is available only in the Windows desktop app. It uses a
 location heuristic, may flag legitimate software, and is not a full malware
 scanner or a guarantee that a process is malicious or safe.
+
+The Gmail add-on is optional and user-triggered; it does not monitor the inbox.
+See [Gmail add-on setup](docs/GMAIL_ADDON_SETUP.md) for deployment and privacy
+details.
 
 ## Technology stack
 
