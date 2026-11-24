@@ -2,42 +2,65 @@
 
 ## Repository
 
-- GitHub repository URL: NOT CREATED
+- GitHub repository URL: [AI-Guardian](https://github.com/sashaserhiienko231-wq/AI-Guardian)
 - Repository name: AI-Guardian
-- Visibility: NOT PUBLISHED
+- Visibility: PUBLIC
 - Default branch: main
-- Commit hash: `0020cb74fd2d9dbaff802ebb16b0c2a83d11ccd7`
-- Committed files: 195
+- Initial commit: `0020cb74fd2d9dbaff802ebb16b0c2a83d11ccd7`
+- Tracked files: 196
 
 ## Publication status
 
-GitHub publication was blocked because GitHub CLI authentication did not
-complete. No repository was created and no source code was pushed.
+- Status: PASSED
+- Repository creation: PASSED
+- Source push to `origin/main`: PASSED
+- Remote tracking: `main` tracks `origin/main`
+- Public repository page: PASSED through unauthenticated HTTP verification
+- README availability: PASSED through the unauthenticated raw GitHub URL
+- Source availability: PASSED through the unauthenticated raw GitHub URL
+- Repository description: PASSED
+- GitHub topics: PASSED
+
+## GitHub Actions
+
+- Workflow: CI
+- Workflow path: `.github/workflows/ci.yml`
+- Workflow state: active
+- Initial push run: FAILED
+- Initial failure causes:
+  - Existing Markdown files exceeded strict default lint rules
+  - Flutter CI used the moving stable SDK and found a newer SDK deprecation
+  - Gitleaks lacked full history and could not resolve the push revision range
+- CI configuration fixes:
+  - Repository Markdown lint configuration added
+  - Flutter pinned to version 3.41.5
+  - Checkout configured with `fetch-depth: 0` for Flutter and Gitleaks jobs
+- Rerun status: NOT TESTED yet until the fix commit is pushed
 
 ## Secret and signing audit
 
 - Status: PASSED
 - Staged credential patterns: NOT FOUND
-- Staged environment, database, keystore, key-property, and credential files:
+- Environment, database, keystore, key-property, and credential files:
   NOT PRESENT
 - `.env.example`: PRESENT as a placeholder-only template
 - Android keystore and production signing credentials: EXCLUDED
 - Local Android SDK configuration: EXCLUDED
 - Local SQLite database: EXCLUDED
-- Existing Git history: NOT APPLICABLE; this repository was newly initialized
+- Git history: no previous history existed before initialization
 
 ## Validation
 
 - Backend pytest: PASSED, 40 tests passed
-- Flutter analyze: PASSED, no issues found
+- Flutter analyze: PASSED with Flutter 3.41.5
 - Flutter test: PASSED, 1 test passed
-- Markdown lint: PARTIALLY VERIFIED
+- Markdown lint: PASSED after repository configuration
 - Git diff whitespace check: PASSED
-- GitHub Actions: NOT TESTED; workflow created but not run before publication
-- README availability: NOT TESTED; repository not published
-- Documentation availability: NOT TESTED; repository not published
-- Public visibility: NOT TESTED; repository not published
+- Documentation availability: PASSED through public GitHub
 - Release: NOT CREATED
+- Docker/PostgreSQL runtime: NOT TESTED
+- Physical Android install: NOT TESTED
+- Camera hardware: NOT TESTED
 
 ## Excluded files
 
@@ -54,9 +77,8 @@ complete. No repository was created and no source code was pushed.
 
 ## Known limitations
 
-- GitHub authentication must be completed before repository creation or push.
 - The machine has no production keystore or authorized signing credentials.
+- Release artifacts are excluded and require separate verification.
 - Hardware-dependent Android camera and physical-device checks were not run.
 - Docker/PostgreSQL runtime was not verified.
-- Release artifacts are excluded from the initial commit and must be reviewed
-  separately before any release publication.
+- GitHub Actions rerun verification is pending the fix commit.
