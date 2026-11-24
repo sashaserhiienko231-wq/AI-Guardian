@@ -1,0 +1,13 @@
+F:/Загрузки с хрома/proctoring_app/build/CMakeFiles/INSTALL.dir
+F:/Загрузки с хрома/proctoring_app/build/CMakeFiles/ALL_BUILD.dir
+F:/Загрузки с хрома/proctoring_app/build/CMakeFiles/ZERO_CHECK.dir
+F:/Загрузки с хрома/proctoring_app/build/flutter/CMakeFiles/flutter_wrapper_plugin.dir
+F:/Загрузки с хрома/proctoring_app/build/flutter/CMakeFiles/flutter_wrapper_app.dir
+F:/Загрузки с хрома/proctoring_app/build/flutter/CMakeFiles/flutter_assemble.dir
+F:/Загрузки с хрома/proctoring_app/build/flutter/CMakeFiles/INSTALL.dir
+F:/Загрузки с хрома/proctoring_app/build/runner/CMakeFiles/ai_guardian.dir
+F:/Загрузки с хрома/proctoring_app/build/runner/CMakeFiles/INSTALL.dir
+F:/Загрузки с хрома/proctoring_app/build/runner/CMakeFiles/ALL_BUILD.dir
+F:/Загрузки с хрома/proctoring_app/build/plugins/file_selector_windows/CMakeFiles/file_selector_windows_plugin.dir
+F:/Загрузки с хрома/proctoring_app/build/plugins/file_selector_windows/CMakeFiles/INSTALL.dir
+F:/Загрузки с хрома/proctoring_app/build/plugins/file_selector_windows/CMakeFiles/ALL_BUILD.dir
