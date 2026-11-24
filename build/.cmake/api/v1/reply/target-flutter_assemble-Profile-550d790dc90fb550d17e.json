@@ -1,0 +1,84 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target"
+		],
+		"files" : 
+		[
+			"flutter/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 103,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"dependencies" : 
+	[
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "flutter_assemble::@2bb09fbb03a373b2cb34",
+	"name" : "flutter_assemble",
+	"paths" : 
+	{
+		"build" : "flutter",
+		"source" : "flutter"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"isGenerated" : true,
+			"path" : "F:/\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441 \u0445\u0440\u043e\u043c\u0430/proctoring_app/build/flutter/CMakeFiles/flutter_assemble",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "F:/\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441 \u0445\u0440\u043e\u043c\u0430/proctoring_app/build/CMakeFiles/4f092dc5f6acdcfe09fd941e5121cbd1/flutter_assemble.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "F:/\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441 \u0445\u0440\u043e\u043c\u0430/proctoring_app/build/CMakeFiles/ad353f90010c78c8c1d3bbd0ed6e5c52/flutter_windows.dll.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}
