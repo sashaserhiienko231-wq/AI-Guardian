@@ -24,14 +24,19 @@ class ProcessFinding {
 class ProcessScanner {
   static const _channel = MethodChannel('ai_guardian/process_scanner');
 
-  static bool get isSupported => defaultTargetPlatform == TargetPlatform.windows;
+  static bool get isSupported =>
+      defaultTargetPlatform == TargetPlatform.windows;
 
   Future<ProcessScanReport> scan() async {
     if (!isSupported) {
-      throw UnsupportedError('Process scanning is currently available on Windows only.');
+      throw UnsupportedError(
+        'Process scanning is currently available on Windows only.',
+      );
     }
 
-    final value = await _channel.invokeMapMethod<Object?, Object?>('scanProcesses');
+    final value = await _channel.invokeMapMethod<Object?, Object?>(
+      'scanProcesses',
+    );
     if (value == null) {
       throw PlatformException(
         code: 'invalid_process_scan',
