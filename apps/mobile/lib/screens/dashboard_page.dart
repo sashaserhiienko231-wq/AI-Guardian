@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../app/design_system.dart';
 import '../app/providers.dart';
 import '../app/strings.dart';
+import '../services/process_scanner.dart';
 import 'shared_widgets.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
@@ -115,9 +116,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_statisticsError != null) ...[
-            ErrorPanel(
-              message: _statisticsError!,
-              retryLabel: strings.retry,
+            _OfflineOverview(
+              strings: strings,
+              error: _statisticsError!,
               onRetry: _load,
             ),
             const SizedBox(height: GuardianSpace.lg),
@@ -125,7 +126,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           if (_loadingStatistics && _statistics == null)
             const _DashboardSkeleton()
           else if (_statistics != null)
-            _buildDashboard(context, strings),
+            _buildDashboard(context, strings)
+          else if (_statisticsError == null)
+            EmptyState(
+              icon: Icons.shield_outlined,
+              title: strings.noDashboardData,
+              message: strings.connectApi,
+              action: OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(strings.retry),
+              ),
+            ),
           const SizedBox(height: GuardianSpace.xxl),
           SectionHeading(strings.quickActions),
           const SizedBox(height: GuardianSpace.md),
@@ -153,6 +165,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           totalScans: total,
           healthVersion: _serviceVersion,
         ),
+        if (_recommendations.isNotEmpty) ...[
+          const SizedBox(height: GuardianSpace.lg),
+          _Recommendations(strings: strings, recommendations: _recommendations),
+        ],
         const SizedBox(height: GuardianSpace.lg),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -245,6 +261,219 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ],
     );
   }
+
+  List<dynamic> get _recommendations {
+    final value = _statistics?['recommendations'];
+    if (value is! List) return const [];
+    return value
+        .where((item) {
+          if (item is String) return item.trim().isNotEmpty;
+          if (item is Map) {
+            return [
+              item['title'],
+              item['recommendation'],
+              item['description'],
+            ].any((text) => text is String && text.trim().isNotEmpty);
+          }
+          return false;
+        })
+        .toList(growable: false);
+  }
+}
+
+class _OfflineOverview extends StatelessWidget {
+  const _OfflineOverview({
+    required this.strings,
+    required this.error,
+    required this.onRetry,
+  });
+
+  final AppStrings strings;
+  final String error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => SurfaceCard(
+    accent: GuardianColors.warning,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.cloud_off_outlined, color: GuardianColors.warning),
+            const SizedBox(width: GuardianSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.apiOfflineTitle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: GuardianSpace.xs),
+                  Text(strings.apiOfflineDescription),
+                  const SizedBox(height: GuardianSpace.sm),
+                  Text(
+                    error,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: GuardianSpace.sm),
+            IconButton(
+              tooltip: strings.retry,
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: GuardianSpace.lg),
+        Text(
+          strings.localProtection,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: GuardianSpace.xs),
+        Text(
+          strings.localProtectionDescription,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: GuardianSpace.md),
+        Wrap(
+          spacing: GuardianSpace.md,
+          runSpacing: GuardianSpace.md,
+          children: [
+            _OfflineFeature(
+              strings: strings,
+              title: strings.passwordCenter,
+              description: strings.passwordCheckDescription,
+              icon: Icons.key_rounded,
+              route: '/password',
+              color: GuardianColors.success,
+            ),
+            if (ProcessScanner.isSupported)
+              _OfflineFeature(
+                strings: strings,
+                title: strings.processSafety,
+                description: strings.processCheckDescription,
+                icon: Icons.monitor_heart_outlined,
+                route: '/processes',
+                color: GuardianColors.cyan,
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _OfflineFeature extends StatelessWidget {
+  const _OfflineFeature({
+    required this.strings,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.route,
+    required this.color,
+  });
+
+  final AppStrings strings;
+  final String title;
+  final String description;
+  final String route;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 290,
+    child: InteractiveSurfaceCard(
+      accent: color,
+      padding: const EdgeInsets.all(GuardianSpace.md),
+      onTap: () => context.go(route),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: GuardianSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: GuardianSpace.xs),
+                Text(description, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: GuardianSpace.xs),
+          const Icon(Icons.arrow_forward_rounded, size: 17),
+        ],
+      ),
+    ),
+  );
+}
+
+class _Recommendations extends StatelessWidget {
+  const _Recommendations({
+    required this.strings,
+    required this.recommendations,
+  });
+
+  final AppStrings strings;
+  final List<dynamic> recommendations;
+
+  String _text(dynamic recommendation) {
+    if (recommendation is String) return recommendation;
+    if (recommendation is Map) {
+      for (final key in ['title', 'recommendation', 'description']) {
+        final value = recommendation[key];
+        if (value is String && value.trim().isNotEmpty) return value;
+      }
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) => SurfaceCard(
+    padding: const EdgeInsets.all(GuardianSpace.lg),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeading(strings.recommendedActions),
+        const SizedBox(height: GuardianSpace.sm),
+        for (final recommendation in recommendations)
+          if (_text(recommendation).isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: GuardianSpace.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.arrow_right_rounded,
+                    color: GuardianColors.cyan,
+                  ),
+                  const SizedBox(width: GuardianSpace.xs),
+                  Expanded(child: Text(_text(recommendation))),
+                ],
+              ),
+            ),
+      ],
+    ),
+  );
 }
 
 class _DashboardSkeleton extends StatelessWidget {
@@ -739,49 +968,119 @@ class _QuickActions extends StatelessWidget {
   final AppStrings strings;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: GuardianSpace.md,
-    runSpacing: GuardianSpace.md,
-    children: [
-      _QuickAction(
-        icon: Icons.link_rounded,
-        label: strings.scanLink,
-        color: GuardianColors.cyan,
-        onTap: () => context.go('/link'),
-      ),
-      _QuickAction(
-        icon: Icons.mark_email_read_outlined,
-        label: strings.reviewEmail,
-        color: GuardianColors.violet,
-        onTap: () => context.go('/email'),
-      ),
-      _QuickAction(
-        icon: Icons.monitor_heart_outlined,
-        label: strings.checkProcesses,
-        color: GuardianColors.warning,
-        onTap: () => context.go('/processes'),
-      ),
-    ],
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      const gap = GuardianSpace.md;
+      final columns = constraints.maxWidth < 620
+          ? 1
+          : constraints.maxWidth < 1040
+          ? 2
+          : 4;
+      final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          _QuickAction(
+            width: width,
+            icon: Icons.link_rounded,
+            label: strings.scanLink,
+            description: strings.linkSubtitle,
+            color: GuardianColors.cyan,
+            onTap: () => context.go('/link'),
+          ),
+          _QuickAction(
+            width: width,
+            icon: Icons.mark_email_read_outlined,
+            label: strings.reviewEmail,
+            description: strings.emailSubtitle,
+            color: GuardianColors.violet,
+            onTap: () => context.go('/email'),
+          ),
+          _QuickAction(
+            width: width,
+            icon: Icons.qr_code_scanner_rounded,
+            label: strings.qrScanner,
+            description: strings.qrSubtitle,
+            color: GuardianColors.cyan,
+            onTap: () => context.go('/qr'),
+          ),
+          _QuickAction(
+            width: width,
+            icon: Icons.auto_awesome_outlined,
+            label: strings.assistant,
+            description: strings.assistantSubtitle,
+            color: GuardianColors.violet,
+            onTap: () => context.go('/assistant'),
+          ),
+        ],
+      );
+    },
   );
 }
 
 class _QuickAction extends StatelessWidget {
   const _QuickAction({
+    required this.width,
     required this.icon,
     required this.label,
+    required this.description,
     required this.color,
     required this.onTap,
   });
 
+  final double width;
   final IconData icon;
   final String label;
+  final String description;
   final Color color;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-    onPressed: onTap,
-    icon: Icon(icon, color: color),
-    label: Text(label),
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: InteractiveSurfaceCard(
+      accent: color,
+      padding: const EdgeInsets.all(GuardianSpace.lg),
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(GuardianRadius.small),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: GuardianSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: GuardianSpace.xs),
+                Text(
+                  description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_forward_rounded, size: 17),
+        ],
+      ),
+    ),
   );
 }

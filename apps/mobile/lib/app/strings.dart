@@ -26,6 +26,12 @@ class AppStrings {
       _text('Expand sidebar', 'Розгорнути бічну панель');
   String get openNavigation => _text('Open navigation', 'Відкрити навігацію');
   String get workspace => _text('Workspace', 'Робочий простір');
+  String get applicationMenu => _text('Application menu', 'Меню застосунку');
+  String get aboutApplication => _text('About AI Guardian', 'Про AI Guardian');
+  String get aboutDescription => _text(
+    'AI Guardian brings your security tools together. Results depend on the configured services and local checks.',
+    'AI Guardian об’єднує інструменти безпеки. Результати залежать від налаштованих сервісів і локальних перевірок.',
+  );
   String get dashboardSubtitle => _text(
     'A clear view of your latest security activity.',
     'Актуальна інформація про стан вашої безпеки.',
@@ -102,12 +108,42 @@ class AppStrings {
   String get recentActivity => _text('Recent activity', 'Остання активність');
   String get viewAll => _text('View all', 'Переглянути все');
   String get quickActions => _text('Quick actions', 'Швидкі дії');
+  String get apiOfflineTitle => _text(
+    'Live dashboard data is unavailable',
+    'Актуальні дані дашборда недоступні',
+  );
+  String get apiOfflineDescription => _text(
+    'The dashboard could not load its API-backed data. Password pattern checks and read-only Windows process review remain available locally.',
+    'Дашборду не вдалося завантажити дані API. Перевірка шаблонів паролів і перегляд процесів Windows лише для читання доступні локально.',
+  );
+  String get localProtection =>
+      _text('Available on this device', 'Доступно на цьому пристрої');
+  String get localProtectionDescription => _text(
+    'These checks run locally and do not require the security API.',
+    'Ці перевірки виконуються локально й не потребують API безпеки.',
+  );
+  String get passwordCheckDescription => _text(
+    'Review password patterns without sending the password.',
+    'Перевірте шаблони пароля, не надсилаючи його.',
+  );
+  String get processCheckDescription => _text(
+    'Read-only review of selected Windows process paths.',
+    'Перегляд шляхів вибраних процесів Windows лише для читання.',
+  );
   String get scanLink => _text('Scan a link', 'Перевірити посилання');
   String get reviewEmail => _text('Review an email', 'Перевірити лист');
   String get checkProcesses => _text('Check processes', 'Перевірити процеси');
   String get scanUrlLabel => _text('Website address', 'Адреса вебсайту');
   String get scanUrlHint => _text('https://example.com', 'https://example.com');
   String get scanUrlAction => _text('Scan address', 'Перевірити адресу');
+  String get pasteFromClipboard =>
+      _text('Paste from clipboard', 'Вставити з буфера обміну');
+  String get clipboardEmpty =>
+      _text('Clipboard has no text to paste.', 'У буфері обміну немає тексту.');
+  String get clipboardReadError => _text(
+    'Could not read the clipboard. Paste the address manually.',
+    'Не вдалося прочитати буфер обміну. Вставте адресу вручну.',
+  );
   String get invalidUrl => _text(
     'Enter a valid HTTP or HTTPS web address.',
     'Введіть коректну вебадресу з HTTP або HTTPS.',
@@ -134,6 +170,11 @@ class AppStrings {
     'The message text is sent to the configured security API for analysis.',
     'Текст листа надсилається до налаштованого API безпеки для аналізу.',
   );
+  String get characters => _text('characters', 'символів');
+  String get emailWorkspaceHint => _text(
+    'Add any available details. The service will analyze the information you provide.',
+    'Додайте доступні відомості. Сервіс проаналізує надану інформацію.',
+  );
   String get scannerCameraUnavailable => _text(
     'Camera preview is unavailable. You can still inspect a QR image or paste decoded content.',
     'Попередній перегляд камери недоступний. Ви можете перевірити зображення QR-коду або вставити його вміст.',
@@ -146,6 +187,12 @@ class AppStrings {
   String get switchCamera => _text('Switch camera', 'Змінити камеру');
   String get toggleFlash => _text('Toggle flash', 'Увімкнути спалах');
   String get decodedContent => _text('Decoded content', 'Розпізнаний вміст');
+  String get qrResultPreviewTitle =>
+      _text('QR content captured', 'Вміст QR-коду отримано');
+  String get qrResultPreviewNotice => _text(
+    'The decoded content is shown for review and has not been opened.',
+    'Розпізнаний вміст показано для перегляду; його не відкривали.',
+  );
   String get qrContentHint => _text(
     'Paste text or a web address from a QR code',
     'Вставте текст або вебадресу з QR-коду',
@@ -205,6 +252,7 @@ class AppStrings {
     'Conversation is kept in this window only.',
     'Переписка зберігається лише у цьому вікні.',
   );
+  String get conversationHistory => _text('Conversation', 'Розмова');
   String get assistantHint =>
       _text('Ask a security question…', 'Поставте запитання про безпеку…');
   String get send => _text('Send', 'Надіслати');
@@ -215,12 +263,36 @@ class AppStrings {
     'Ask about suspicious messages, safe browsing, or account protection.',
     'Запитайте про підозрілі листи, безпечний перегляд або захист облікового запису.',
   );
+  String get userIdentity => _text('You', 'Ви');
+  String get assistantIdentity => _text('AI Guardian', 'AI Guardian');
+  String get examplePrompts => _text('Try asking', 'Спробуйте запитати');
+  String get examplePromptPhishing => _text(
+    'What are common signs of a phishing email?',
+    'Які типові ознаки фішингового листа?',
+  );
+  String get examplePromptLinks => _text(
+    'How can I check a suspicious link safely?',
+    'Як безпечно перевірити підозріле посилання?',
+  );
+  String get examplePromptPasswords => _text(
+    'How do I create a stronger passphrase?',
+    'Як створити надійнішу парольну фразу?',
+  );
+  String get clearConversation =>
+      _text('Clear conversation', 'Очистити розмову');
   String get searchHistory => _text('Search results', 'Пошук результатів');
   String get scanType => _text('Scan type', 'Тип перевірки');
   String get allTypes => _text('All types', 'Усі типи');
   String get severity => _text('Risk level', 'Рівень ризику');
   String get allLevels => _text('All levels', 'Усі рівні');
   String get dateRange => _text('Date range', 'Період');
+  String get sortBy => _text('Sort by', 'Сортувати за');
+  String get newestFirst => _text('Newest first', 'Спочатку новіші');
+  String get oldestFirst => _text('Oldest first', 'Спочатку старіші');
+  String get highestRiskFirst =>
+      _text('Highest risk first', 'Спочатку найвищий ризик');
+  String get lowestRiskFirst =>
+      _text('Lowest risk first', 'Спочатку найнижчий ризик');
   String get anyDate => _text('Any time', 'За весь час');
   String get lastDay => _text('Last 24 hours', 'Останні 24 години');
   String get lastWeek => _text('Last 7 days', 'Останні 7 днів');

@@ -26,6 +26,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   String _scanType = 'all';
   String _severity = 'all';
   String _dateRange = 'all';
+  String _sort = 'newest';
   int _page = 1;
   int _total = 0;
   bool _loading = true;
@@ -51,7 +52,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     final query = <String, String>{
       'page': '$_page',
       'limit': '$_pageSize',
-      'sort': 'newest',
+      'sort': _sort,
     };
     if (_scanType != 'all') query['scan_type'] = _scanType;
     final search = _searchController.text.trim();
@@ -102,6 +103,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     if (value == null) return;
     setState(() {
       _scanType = value;
+      _page = 1;
+    });
+    _load();
+  }
+
+  void _changeSort(String? value) {
+    if (value == null) return;
+    setState(() {
+      _sort = value;
       _page = 1;
     });
     _load();
@@ -233,6 +243,17 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ],
                   onChanged: _changeScanType,
                 );
+                final sort = _FilterDropdown(
+                  label: strings.sortBy,
+                  value: _sort,
+                  items: [
+                    ('newest', strings.newestFirst),
+                    ('oldest', strings.oldestFirst),
+                    ('risk_high', strings.highestRiskFirst),
+                    ('risk_low', strings.lowestRiskFirst),
+                  ],
+                  onChanged: _changeSort,
+                );
                 if (stacked) {
                   return Column(
                     children: [
@@ -241,6 +262,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                       type,
                       const SizedBox(height: GuardianSpace.md),
                       _buildLocalFilters(strings),
+                      const SizedBox(height: GuardianSpace.md),
+                      sort,
                     ],
                   );
                 }
@@ -252,7 +275,47 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                       children: [
                         Expanded(child: type),
                         const SizedBox(width: GuardianSpace.md),
-                        Expanded(child: _buildLocalFilters(strings)),
+                        Expanded(
+                          child: _FilterDropdown(
+                            label: strings.severity,
+                            value: _severity,
+                            items: [
+                              ('all', strings.allLevels),
+                              ('low', strings.lowRisk),
+                              ('elevated', strings.elevatedRisk),
+                              ('high', strings.highRisk),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _severity = value);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: GuardianSpace.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FilterDropdown(
+                            label: strings.dateRange,
+                            value: _dateRange,
+                            items: [
+                              ('all', strings.anyDate),
+                              ('day', strings.lastDay),
+                              ('week', strings.lastWeek),
+                              ('month', strings.lastMonth),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _dateRange = value);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: GuardianSpace.md),
+                        Expanded(child: sort),
                       ],
                     ),
                   ],
@@ -339,38 +402,34 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  Widget _buildLocalFilters(AppStrings strings) => Row(
+  Widget _buildLocalFilters(AppStrings strings) => Column(
     children: [
-      Expanded(
-        child: _FilterDropdown(
-          label: strings.severity,
-          value: _severity,
-          items: [
-            ('all', strings.allLevels),
-            ('low', strings.lowRisk),
-            ('elevated', strings.elevatedRisk),
-            ('high', strings.highRisk),
-          ],
-          onChanged: (value) {
-            if (value != null) setState(() => _severity = value);
-          },
-        ),
+      _FilterDropdown(
+        label: strings.severity,
+        value: _severity,
+        items: [
+          ('all', strings.allLevels),
+          ('low', strings.lowRisk),
+          ('elevated', strings.elevatedRisk),
+          ('high', strings.highRisk),
+        ],
+        onChanged: (value) {
+          if (value != null) setState(() => _severity = value);
+        },
       ),
-      const SizedBox(width: GuardianSpace.md),
-      Expanded(
-        child: _FilterDropdown(
-          label: strings.dateRange,
-          value: _dateRange,
-          items: [
-            ('all', strings.anyDate),
-            ('day', strings.lastDay),
-            ('week', strings.lastWeek),
-            ('month', strings.lastMonth),
-          ],
-          onChanged: (value) {
-            if (value != null) setState(() => _dateRange = value);
-          },
-        ),
+      const SizedBox(height: GuardianSpace.md),
+      _FilterDropdown(
+        label: strings.dateRange,
+        value: _dateRange,
+        items: [
+          ('all', strings.anyDate),
+          ('day', strings.lastDay),
+          ('week', strings.lastWeek),
+          ('month', strings.lastMonth),
+        ],
+        onChanged: (value) {
+          if (value != null) setState(() => _dateRange = value);
+        },
       ),
     ],
   );

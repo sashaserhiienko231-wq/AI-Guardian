@@ -75,6 +75,13 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
   Widget build(BuildContext context) {
     final strings = AppStrings(ref.watch(localeProvider));
     final score = _score;
+    final password = _controller.text;
+    final characterGroups = <(String, bool)>[
+      (strings.lowercase, RegExp('[a-z]').hasMatch(password)),
+      (strings.uppercase, RegExp('[A-Z]').hasMatch(password)),
+      (strings.digits, RegExp('[0-9]').hasMatch(password)),
+      (strings.symbols, RegExp('[^A-Za-z0-9]').hasMatch(password)),
+    ];
     final color = score == null
         ? GuardianColors.muted
         : score >= 75
@@ -184,11 +191,21 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
                         borderRadius: BorderRadius.circular(
                           GuardianRadius.pill,
                         ),
-                        child: LinearProgressIndicator(
-                          value: score / 100,
-                          minHeight: 9,
-                          backgroundColor: color.withValues(alpha: 0.12),
-                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: score / 100),
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 450),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, progress, _) =>
+                              LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 9,
+                                backgroundColor: color.withValues(alpha: 0.12),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  color,
+                                ),
+                              ),
                         ),
                       ),
                       const SizedBox(height: GuardianSpace.lg),
@@ -204,6 +221,22 @@ class _PasswordPageState extends ConsumerState<PasswordPage> {
                             label: strings.characterGroups,
                             value: '${_groupCount ?? 0}/4',
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: GuardianSpace.md),
+                      Text(
+                        strings.characterGroups,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: GuardianSpace.sm),
+                      Wrap(
+                        spacing: GuardianSpace.sm,
+                        runSpacing: GuardianSpace.sm,
+                        children: [
+                          for (final (label, present) in characterGroups)
+                            _ComplexityChip(label: label, present: present),
                         ],
                       ),
                       const SizedBox(height: GuardianSpace.md),
@@ -270,4 +303,43 @@ class _PasswordFact extends StatelessWidget {
     ),
     child: Text('$label: $value'),
   );
+}
+
+class _ComplexityChip extends StatelessWidget {
+  const _ComplexityChip({required this.label, required this.present});
+
+  final String label;
+  final bool present;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = present
+        ? GuardianColors.success
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+        borderRadius: BorderRadius.circular(GuardianRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            present ? Icons.check_rounded : Icons.remove_rounded,
+            size: 15,
+            color: color,
+          ),
+          const SizedBox(width: GuardianSpace.xs),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
 }

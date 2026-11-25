@@ -18,10 +18,10 @@ abstract final class GuardianColors {
 abstract final class GuardianSpace {
   static const xs = 4.0;
   static const sm = 8.0;
-  static const md = 12.0;
-  static const lg = 16.0;
-  static const xl = 24.0;
-  static const xxl = 32.0;
+  static const md = 16.0;
+  static const lg = 24.0;
+  static const xl = 32.0;
+  static const xxl = 40.0;
 }
 
 abstract final class GuardianRadius {
@@ -126,6 +126,7 @@ abstract final class GuardianTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GuardianRadius.small),
           ),
+          overlayColor: GuardianColors.cyan.withValues(alpha: 0.12),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -136,6 +137,7 @@ abstract final class GuardianTheme {
             borderRadius: BorderRadius.circular(GuardianRadius.small),
           ),
           side: BorderSide(color: outline),
+          overlayColor: GuardianColors.violet.withValues(alpha: 0.1),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -226,10 +228,11 @@ class PageHeading extends StatelessWidget {
     children: [
       Text(
         title,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
-        ),
+        style:
+            (MediaQuery.sizeOf(context).width < 700
+                    ? Theme.of(context).textTheme.headlineSmall
+                    : Theme.of(context).textTheme.headlineMedium)
+                ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5),
       ),
       const SizedBox(height: GuardianSpace.xs),
       Text(
@@ -306,6 +309,73 @@ class SurfaceCard extends StatelessWidget {
   }
 }
 
+class InteractiveSurfaceCard extends StatefulWidget {
+  const InteractiveSurfaceCard({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.padding = const EdgeInsets.all(GuardianSpace.lg),
+    this.accent,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final EdgeInsetsGeometry padding;
+  final Color? accent;
+
+  @override
+  State<InteractiveSurfaceCard> createState() => _InteractiveSurfaceCardState();
+}
+
+class _InteractiveSurfaceCardState extends State<InteractiveSurfaceCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(GuardianRadius.medium),
+          border: Border.all(
+            color:
+                widget.accent?.withValues(alpha: _hovered ? 0.55 : 0.3) ??
+                theme.dividerColor.withValues(alpha: _hovered ? 0.95 : 0.65),
+          ),
+          boxShadow: theme.brightness == Brightness.dark
+              ? [
+                  BoxShadow(
+                    color: (_hovered ? GuardianColors.violet : Colors.black)
+                        .withValues(alpha: _hovered ? 0.14 : 0.12),
+                    blurRadius: _hovered ? 24 : 16,
+                    offset: Offset(0, _hovered ? 10 : 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(GuardianRadius.medium),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(GuardianRadius.medium),
+            child: Padding(padding: widget.padding, child: widget.child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class MetricCard extends StatelessWidget {
   const MetricCard({
     super.key,
@@ -339,13 +409,18 @@ class MetricCard extends StatelessWidget {
               ),
               child: Icon(icon, size: 19, color: tint),
             ),
-            const Spacer(),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
+            const SizedBox(width: GuardianSpace.sm),
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ),
           ],

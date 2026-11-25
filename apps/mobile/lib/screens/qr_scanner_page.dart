@@ -28,6 +28,7 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
   bool _processing = false;
   bool _detected = false;
   bool _dragging = false;
+  bool _cameraUnavailable = false;
 
   @override
   void dispose() {
@@ -59,11 +60,12 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         await _scannerController.stop();
       } catch (_) {
         if (mounted) {
-          setState(
-            () => _error = AppStrings(
+          setState(() {
+            _cameraUnavailable = true;
+            _error = AppStrings(
               ref.read(localeProvider),
-            ).scannerCameraUnavailable,
-          );
+            ).scannerCameraUnavailable;
+          });
         }
       }
     } catch (error) {
@@ -121,11 +123,12 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
       await _scannerController.switchCamera();
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _error = AppStrings(
+        setState(() {
+          _cameraUnavailable = true;
+          _error = AppStrings(
             ref.read(localeProvider),
-          ).scannerCameraUnavailable,
-        );
+          ).scannerCameraUnavailable;
+        });
       }
     }
   }
@@ -135,11 +138,12 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
       await _scannerController.toggleTorch();
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _error = AppStrings(
+        setState(() {
+          _cameraUnavailable = true;
+          _error = AppStrings(
             ref.read(localeProvider),
-          ).scannerCameraUnavailable,
-        );
+          ).scannerCameraUnavailable;
+        });
       }
     }
   }
@@ -149,17 +153,19 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
       _result = null;
       _error = null;
       _detected = false;
+      _cameraUnavailable = false;
       _contentController.clear();
     });
     try {
       await _scannerController.start();
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _error = AppStrings(
+        setState(() {
+          _cameraUnavailable = true;
+          _error = AppStrings(
             ref.read(localeProvider),
-          ).scannerCameraUnavailable,
-        );
+          ).scannerCameraUnavailable;
+        });
       }
     }
   }
@@ -246,29 +252,37 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
                     }
                   }
                 },
-                errorBuilder: (context, error) => _CameraUnavailable(
-                  message: strings.scannerCameraUnavailable,
-                  actionLabel: strings.chooseQrImage,
-                  onChooseImage: _chooseImage,
-                ),
+                errorBuilder: (context, error) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && !_cameraUnavailable) {
+                      setState(() => _cameraUnavailable = true);
+                    }
+                  });
+                  return _CameraUnavailable(
+                    message: strings.scannerCameraUnavailable,
+                    actionLabel: strings.chooseQrImage,
+                    onChooseImage: _chooseImage,
+                  );
+                },
               ),
-              IgnorePointer(
-                child: Center(
-                  child: Container(
-                    width: 220,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: GuardianColors.cyan.withValues(alpha: 0.9),
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        GuardianRadius.medium,
+              if (!_cameraUnavailable)
+                IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      width: 220,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: GuardianColors.cyan.withValues(alpha: 0.9),
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          GuardianRadius.medium,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               if (_dragging)
                 Container(
                   color: GuardianColors.background.withValues(alpha: 0.78),
@@ -287,6 +301,50 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
                   color: GuardianColors.background.withValues(alpha: 0.62),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
+              if (_result != null)
+                Container(
+                  color: GuardianColors.background.withValues(alpha: 0.94),
+                  padding: const EdgeInsets.all(GuardianSpace.xl),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.qr_code_2_rounded,
+                            color: GuardianColors.cyan,
+                            size: 38,
+                          ),
+                          const SizedBox(height: GuardianSpace.md),
+                          Text(
+                            strings.qrResultPreviewTitle,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: GuardianSpace.sm),
+                          SelectableText(
+                            _contentController.text,
+                            maxLines: 5,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: GuardianSpace.md),
+                          Text(
+                            strings.qrResultPreviewNotice,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -297,12 +355,12 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         runSpacing: GuardianSpace.sm,
         children: [
           OutlinedButton.icon(
-            onPressed: _switchCamera,
+            onPressed: _cameraUnavailable ? null : _switchCamera,
             icon: const Icon(Icons.cameraswitch_outlined),
             label: Text(strings.switchCamera),
           ),
           OutlinedButton.icon(
-            onPressed: _toggleFlash,
+            onPressed: _cameraUnavailable ? null : _toggleFlash,
             icon: const Icon(Icons.flashlight_on_outlined),
             label: Text(strings.toggleFlash),
           ),

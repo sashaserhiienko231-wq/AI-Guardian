@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/design_system.dart';
@@ -76,6 +77,32 @@ class _UrlScannerPageState extends ConsumerState<UrlScannerPage> {
     }
   }
 
+  Future<void> _pasteFromClipboard(AppStrings strings) async {
+    try {
+      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+      final value = clipboard?.text?.trim();
+      if (value == null || value.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(strings.clipboardEmpty)));
+        }
+        return;
+      }
+      setState(() {
+        _controller.text = value;
+        _error = null;
+        _result = null;
+      });
+    } on PlatformException {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.clipboardReadError)));
+      }
+    }
+  }
+
   Future<void> _loadRecentScans() async {
     setState(() {
       _loadingRecent = true;
@@ -142,6 +169,13 @@ class _UrlScannerPageState extends ConsumerState<UrlScannerPage> {
                       },
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.language_rounded),
+                        suffixIcon: IconButton(
+                          tooltip: strings.pasteFromClipboard,
+                          onPressed: _loading
+                              ? null
+                              : () => _pasteFromClipboard(strings),
+                          icon: const Icon(Icons.content_paste_rounded),
+                        ),
                         labelText: strings.scanUrlLabel,
                         hintText: strings.scanUrlHint,
                         errorText: _error == strings.invalidUrl ? _error : null,
@@ -391,13 +425,19 @@ class _EmailPageState extends ConsumerState<EmailPage> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1080),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SurfaceCard(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final form = SurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      strings.emailWorkspaceHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: GuardianSpace.lg),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final stacked = constraints.maxWidth < 620;
@@ -453,8 +493,8 @@ class _EmailPageState extends ConsumerState<EmailPage> {
                     TextField(
                       controller: _body,
                       key: const Key('email-body'),
-                      minLines: 7,
-                      maxLines: 12,
+                      minLines: 6,
+                      maxLines: 10,
                       onChanged: (_) {
                         if (_error == strings.emailInputRequired) {
                           setState(() => _error = null);
@@ -472,25 +512,33 @@ class _EmailPageState extends ConsumerState<EmailPage> {
                       ),
                     ),
                     const SizedBox(height: GuardianSpace.md),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: GuardianSpace.sm,
+                      runSpacing: GuardianSpace.xs,
                       children: [
                         Icon(
                           Icons.info_outline,
                           size: 17,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(width: GuardianSpace.sm),
-                        Expanded(
-                          child: Text(
-                            strings.emailPrivacy,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
+                        Text(
+                          strings.emailPrivacy,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        Text(
+                          '${_body.text.length} ${strings.characters}',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ),
@@ -515,24 +563,115 @@ class _EmailPageState extends ConsumerState<EmailPage> {
                     ),
                   ],
                 ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: GuardianSpace.lg),
-                ErrorPanel(
-                  message: _error!,
-                  retryLabel: strings.retry,
-                  onRetry: _analyze,
-                ),
-              ],
-              if (_result != null) ...[
-                const SizedBox(height: GuardianSpace.xl),
-                SectionHeading(strings.scanResult),
-                const SizedBox(height: GuardianSpace.md),
-                ScanResultCard(result: _result!, strings: strings),
-              ],
-            ],
+              );
+              final result = _EmailResultPanel(
+                strings: strings,
+                result: _result,
+                error: _error,
+                loading: _loading,
+                onRetry: _analyze,
+              );
+              if (constraints.maxWidth < 940) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    form,
+                    const SizedBox(height: GuardianSpace.lg),
+                    result,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: form),
+                  const SizedBox(width: GuardianSpace.lg),
+                  Expanded(flex: 4, child: result),
+                ],
+              );
+            },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmailResultPanel extends StatelessWidget {
+  const _EmailResultPanel({
+    required this.strings,
+    required this.result,
+    required this.error,
+    required this.loading,
+    required this.onRetry,
+  });
+
+  final AppStrings strings;
+  final Map<String, dynamic>? result;
+  final String? error;
+  final bool loading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (result != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionHeading(strings.scanResult),
+          const SizedBox(height: GuardianSpace.md),
+          ScanResultCard(result: result!, strings: strings),
+        ],
+      );
+    }
+    if (error != null) {
+      return ErrorPanel(
+        message: error!,
+        retryLabel: strings.retry,
+        onRetry: onRetry,
+      );
+    }
+    return SurfaceCard(
+      padding: const EdgeInsets.all(GuardianSpace.xl),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        child: loading
+            ? Column(
+                key: const ValueKey('email-progress'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SectionHeading(strings.scanResult),
+                  const SizedBox(height: GuardianSpace.lg),
+                  const LinearProgressIndicator(),
+                  const SizedBox(height: GuardianSpace.md),
+                  Text(strings.loading),
+                ],
+              )
+            : Column(
+                key: const ValueKey('email-empty'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.mark_email_read_outlined,
+                    color: GuardianColors.violet,
+                    size: 26,
+                  ),
+                  const SizedBox(height: GuardianSpace.md),
+                  Text(
+                    strings.scanResult,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: GuardianSpace.sm),
+                  Text(
+                    strings.emailWorkspaceHint,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

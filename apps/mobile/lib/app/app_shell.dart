@@ -8,6 +8,8 @@ import 'strings.dart';
 
 enum _NavigationGroup { protection, intelligence, system }
 
+enum _ApplicationMenuAction { settings, about }
+
 class _Destination {
   const _Destination(this.path, this.icon, this.group, this.label);
 
@@ -464,6 +466,7 @@ class _DesktopHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = AppStrings(ref.watch(localeProvider));
     final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 1440;
     return Container(
       height: 68,
       padding: const EdgeInsets.symmetric(horizontal: GuardianSpace.xl),
@@ -488,10 +491,14 @@ class _DesktopHeader extends ConsumerWidget {
             ),
             const SizedBox(width: GuardianSpace.sm),
           ],
-          Text(
-            strings.workspace,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          Flexible(
+            child: Text(
+              strings.workspace,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           Padding(
@@ -502,14 +509,18 @@ class _DesktopHeader extends ConsumerWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          Text(
-            current.label(strings),
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              current.label(strings),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const Spacer(),
-          _ApiStatusChip(),
+          _ApiStatusChip(compact: compact),
           const SizedBox(width: GuardianSpace.md),
           IconButton(
             tooltip: strings.settings,
@@ -518,6 +529,43 @@ class _DesktopHeader extends ConsumerWidget {
           ),
           const SizedBox(width: GuardianSpace.sm),
           const _BrandMark(size: 34),
+          const SizedBox(width: GuardianSpace.xs),
+          PopupMenuButton<_ApplicationMenuAction>(
+            tooltip: strings.applicationMenu,
+            onSelected: (action) {
+              switch (action) {
+                case _ApplicationMenuAction.settings:
+                  context.go('/settings');
+                case _ApplicationMenuAction.about:
+                  showAboutDialog(
+                    context: context,
+                    applicationName: strings.appName,
+                    applicationVersion: '2.0.0',
+                    applicationIcon: const _BrandMark(size: 36),
+                    children: [Text(strings.aboutDescription)],
+                  );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _ApplicationMenuAction.settings,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.settings_outlined),
+                  title: Text(strings.settings),
+                ),
+              ),
+              PopupMenuItem(
+                value: _ApplicationMenuAction.about,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.info_outline_rounded),
+                  title: Text(strings.aboutApplication),
+                ),
+              ),
+            ],
+            icon: const Icon(Icons.more_vert_rounded),
+          ),
         ],
       ),
     );

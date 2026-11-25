@@ -5,6 +5,11 @@ local-only password pattern analysis, threat history, learning content, and a
 read-only Windows process-path review. Ukrainian is the default interface
 language; English is available in Settings.
 
+The desktop sidebar remembers its expanded or collapsed state. When the API is
+unavailable, password checks and the read-only Windows process review remain
+available locally; API-backed scan, learning, and assistant results are not
+simulated.
+
 ## Run locally
 
 The app connects to `http://localhost:8000` by default. To use another API

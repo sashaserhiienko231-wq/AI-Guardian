@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'strings.dart';
 
@@ -9,6 +12,11 @@ const baseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:8000',
 );
 const apiToken = String.fromEnvironment('API_AUTH_TOKEN');
+
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+  (ref) =>
+      throw StateError('SharedPreferences must be initialized at startup.'),
+);
 
 enum ApiConnectivity { unknown, connected, unavailable }
 
@@ -114,9 +122,30 @@ final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
 
 class SidebarController extends Notifier<bool> {
   @override
-  bool build() => true;
+  bool build() =>
+      ref.watch(sharedPreferencesProvider).getBool('sidebar_expanded') ?? true;
 
-  void toggle() => state = !state;
+  void toggle() {
+    state = !state;
+    unawaited(_persist(state));
+  }
+
+  Future<void> _persist(bool expanded) async {
+    try {
+      await ref
+          .read(sharedPreferencesProvider)
+          .setBool('sidebar_expanded', expanded);
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'AI Guardian',
+          context: ErrorDescription('while saving sidebar preference'),
+        ),
+      );
+    }
+  }
 }
 
 final sidebarExpandedProvider = NotifierProvider<SidebarController, bool>(

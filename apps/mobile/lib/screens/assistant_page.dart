@@ -116,9 +116,46 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
                   padding: EdgeInsets.zero,
                   child: Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          GuardianSpace.lg,
+                          GuardianSpace.sm,
+                          GuardianSpace.md,
+                          GuardianSpace.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                strings.conversationHistory,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            if (_messages.isNotEmpty)
+                              TextButton.icon(
+                                onPressed: _sending
+                                    ? null
+                                    : () => setState(_messages.clear),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 17,
+                                ),
+                                label: Text(strings.clearConversation),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, color: Theme.of(context).dividerColor),
                       Expanded(
                         child: _messages.isEmpty && !_sending
-                            ? _ChatEmptyState(strings: strings)
+                            ? _ChatEmptyState(
+                                strings: strings,
+                                onChoosePrompt: (prompt) {
+                                  _controller.text = prompt;
+                                  _send();
+                                },
+                              )
                             : ListView.builder(
                                 key: const Key('assistant-messages'),
                                 controller: _scrollController,
@@ -142,6 +179,7 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
                                     return const SizedBox.shrink();
                                   }
                                   return _MessageBubble(
+                                    strings: strings,
                                     message: _messages[messageIndex],
                                     onRetry: (text) => _send(retryText: text),
                                   );
@@ -265,16 +303,18 @@ class _DisclosureBanner extends StatelessWidget {
 }
 
 class _ChatEmptyState extends StatelessWidget {
-  const _ChatEmptyState({required this.strings});
+  const _ChatEmptyState({required this.strings, required this.onChoosePrompt});
 
   final AppStrings strings;
+  final ValueChanged<String> onChoosePrompt;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(GuardianSpace.xxl),
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: const EdgeInsets.all(GuardianSpace.xl),
+    child: Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Icon(
             Icons.forum_outlined,
@@ -288,6 +328,36 @@ class _ChatEmptyState extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+          ),
+          const SizedBox(height: GuardianSpace.xl),
+          Text(
+            strings.examplePrompts,
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: GuardianSpace.sm),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: GuardianSpace.sm,
+            runSpacing: GuardianSpace.sm,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.mail_outline_rounded, size: 17),
+                label: Text(strings.examplePromptPhishing),
+                onPressed: () => onChoosePrompt(strings.examplePromptPhishing),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.link_rounded, size: 17),
+                label: Text(strings.examplePromptLinks),
+                onPressed: () => onChoosePrompt(strings.examplePromptLinks),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.key_rounded, size: 17),
+                label: Text(strings.examplePromptPasswords),
+                onPressed: () => onChoosePrompt(strings.examplePromptPasswords),
+              ),
+            ],
           ),
         ],
       ),
@@ -327,8 +397,13 @@ class _ThinkingBubble extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.onRetry});
+  const _MessageBubble({
+    required this.strings,
+    required this.message,
+    required this.onRetry,
+  });
 
+  final AppStrings strings;
   final _ChatMessage message;
   final ValueChanged<String> onRetry;
 
@@ -373,6 +448,31 @@ class _MessageBubble extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isUser
+                        ? Icons.person_outline_rounded
+                        : Icons.shield_outlined,
+                    size: 15,
+                    color: isUser
+                        ? GuardianColors.cyan
+                        : isError
+                        ? GuardianColors.danger
+                        : GuardianColors.violet,
+                  ),
+                  const SizedBox(width: GuardianSpace.xs),
+                  Text(
+                    isUser ? strings.userIdentity : strings.assistantIdentity,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: GuardianSpace.xs),
               if (isUser)
                 SelectableText(message.text)
               else if (isError)
