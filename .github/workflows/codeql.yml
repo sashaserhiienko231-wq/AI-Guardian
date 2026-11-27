@@ -27,7 +27,7 @@ jobs:
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners (GitHub.com only)
     # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     permissions:
       # required for all workflows
       security-events: write
@@ -48,11 +48,12 @@ jobs:
         - language: c-cpp
           build-mode: none
         - language: java-kotlin
-          build-mode: autobuild
+          build-mode: manual
         - language: python
           build-mode: none
-        - language: swift
-          build-mode: autobuild
+        # The iOS/macOS Swift files are stock Flutter runner delegates and
+        # generated plugin registrants; there is no maintained app-specific
+        # Swift implementation to analyze or build.
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
@@ -65,11 +66,43 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
 
-    # Add any setup steps before running the `github/codeql-action/init` action.
-    # This includes steps like installing compilers or runtimes (`actions/setup-node`
-    # or others). This is typically only required for manual builds.
-    # - name: Setup runtime (example)
-    #   uses: actions/setup-example@v1
+    # Android is nested under apps/mobile/android and has no tracked Gradle
+    # wrapper. Use the Flutter SDK and the Gradle version declared by the
+    # project's wrapper properties.
+    - name: Set up Java for Android analysis
+      if: matrix.language == 'java-kotlin'
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Set up Flutter for Android analysis
+      if: matrix.language == 'java-kotlin'
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.41.5'
+
+    - name: Resolve Flutter dependencies for Android analysis
+      if: matrix.language == 'java-kotlin'
+      working-directory: apps/mobile
+      run: flutter pub get
+
+    - name: Prepare Android Gradle configuration
+      if: matrix.language == 'java-kotlin'
+      shell: bash
+      working-directory: apps/mobile
+      run: |
+        flutter_sdk="$(dirname "$(dirname "$(readlink -f "$(command -v flutter)")")")"
+        android_sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+        test -d "$flutter_sdk"
+        test -d "$android_sdk"
+        printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$flutter_sdk" "$android_sdk" > android/local.properties
+
+    - name: Set up Gradle for Android analysis
+      if: matrix.language == 'java-kotlin'
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.14'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -84,22 +117,12 @@ jobs:
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
-    # If the analyze step fails for one of the languages you are analyzing with
-    # "We were unable to automatically build your code", modify the matrix above
-    # to set the build mode to "manual" for that language. Then modify this step
-    # to build your code.
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Run manual build steps
-      if: matrix.build-mode == 'manual'
+    - name: Build Android debug APK for CodeQL
+      if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
       shell: bash
+      working-directory: apps/mobile
       run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-        exit 1
+        flutter build apk --debug --no-pub
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
