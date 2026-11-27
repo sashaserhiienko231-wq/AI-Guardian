@@ -71,7 +71,7 @@ jobs:
     # project's wrapper properties.
     - name: Set up Java for Android analysis
       if: matrix.language == 'java-kotlin'
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: '17'
@@ -100,9 +100,11 @@ jobs:
 
     - name: Set up Gradle for Android analysis
       if: matrix.language == 'java-kotlin'
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v6
       with:
         gradle-version: '8.14'
+        cache-read-only: false
+        cache-overwrite-existing: true
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -122,7 +124,33 @@ jobs:
       shell: bash
       working-directory: apps/mobile
       run: |
-        flutter build apk --debug --no-pub
+        # Retry only Maven HTTP 429 responses, with bounded exponential backoff.
+        # All other build errors fail immediately and the final 429 remains fatal.
+        max_attempts=4
+        for attempt in $(seq 1 "$max_attempts"); do
+          log_file="$(mktemp)"
+          if flutter build apk --debug --no-pub 2>&1 | tee "$log_file"; then
+            rm -f "$log_file"
+            exit 0
+          else
+            build_status=${PIPESTATUS[0]}
+          fi
+
+          if ! grep -Eq 'Received status code 429|HTTP 429|status code: 429' "$log_file"; then
+            rm -f "$log_file"
+            exit "$build_status"
+          fi
+          rm -f "$log_file"
+
+          if [ "$attempt" -eq "$max_attempts" ]; then
+            echo "Build still received HTTP 429 after $max_attempts attempts." >&2
+            exit "$build_status"
+          fi
+
+          delay=$((15 * (2 ** (attempt - 1))))
+          echo "Maven returned HTTP 429; retrying in ${delay}s (attempt $((attempt + 1))/$max_attempts)." >&2
+          sleep "$delay"
+        done
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
