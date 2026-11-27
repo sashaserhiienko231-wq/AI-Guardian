@@ -1,17 +1,37 @@
-# ai_guardian
+# AI Guardian
 
-A new Flutter project.
+AI Guardian is a Flutter security companion with URL, email, and QR checks,
+local-only password pattern analysis, threat history, learning content, and a
+read-only Windows process-path review. Ukrainian is the default interface
+language; English is available in Settings.
 
-## Getting Started
+The desktop sidebar remembers its expanded or collapsed state. When the API is
+unavailable, password checks and the read-only Windows process review remain
+available locally; API-backed scan, learning, and assistant results are not
+simulated.
 
-This project is a starting point for a Flutter application.
+## Run locally
 
-A few resources to get you started if this is your first Flutter project:
+The app connects to `http://localhost:8000` by default. To use another API
+address, provide `--dart-define=API_BASE_URL=https://your-api.example` when
+running or building the app.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```powershell
+flutter pub get
+flutter run -d windows
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Build for Windows
+
+```powershell
+flutter build windows --release
+```
+
+The self-contained Windows release directory is:
+
+```text
+build\windows\x64\runner\Release\
+```
+
+Run `ai_guardian.exe` from that directory so the Flutter runtime, plugins, and
+assets beside it remain available.
