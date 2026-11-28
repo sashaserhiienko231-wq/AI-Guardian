@@ -1,3 +1,5 @@
+import pytest
+
 from app.services.security import analyze_email, analyze_password, analyze_url, validate_public_url
 
 
@@ -58,33 +60,64 @@ def test_unusual_port_detected():
 
 
 def test_ssrf_loopback_rejected():
-    import pytest
     with pytest.raises(ValueError):
         validate_public_url("http://127.0.0.1/admin")
 
 
 def test_ssrf_private_network_rejected():
-    import pytest
     with pytest.raises(ValueError):
         validate_public_url("http://192.168.1.20/internal")
 
 
 def test_ssrf_localhost_rejected():
-    import pytest
     with pytest.raises(ValueError):
         validate_public_url("http://localhost:8000/health")
 
 
 def test_url_credentials_rejected():
-    import pytest
     with pytest.raises(ValueError):
         validate_public_url("https://user:pass@example.com")
 
 
 def test_nonstandard_public_port_rejected():
-    import pytest
     with pytest.raises(ValueError):
         validate_public_url("https://example.com:8443/login")
+
+
+@pytest.mark.parametrize(
+    "hostname",
+    [
+        "example.com",
+        "api.example.co.uk",
+        "xn--e1afmkfd.example",
+        "приклад.example",
+    ],
+)
+def test_public_ascii_hostnames_are_accepted(hostname, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.security.socket.getaddrinfo",
+        lambda *args, **kwargs: [(None, None, None, None, ("8.8.8.8", 443))],
+    )
+
+    validate_public_url(f"https://{hostname}/")
+
+
+@pytest.mark.parametrize(
+    "hostname",
+    [
+        "example..com",
+        f"{'a' * 64}.example",
+        f"{'a' * 63}.{'.'.join(['b' * 63] * 3)}.com",
+        "-example.com",
+        "example-.com",
+        "exa_mple.com",
+        "example.c",
+        "example.-com",
+    ],
+)
+def test_invalid_ascii_hostnames_are_rejected(hostname):
+    with pytest.raises(ValueError):
+        validate_public_url(f"https://{hostname}/")
 
 
 def test_brand_similarity_detected(monkeypatch):

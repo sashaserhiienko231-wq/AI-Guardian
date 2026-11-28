@@ -181,7 +181,19 @@ def validate_public_url(raw_url: str) -> None:
             ascii_host = host.encode("idna").decode("ascii").lower()
         except UnicodeError as exc:
             raise ValueError("Hostname is not valid IDNA") from exc
-        if not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63}", ascii_host):
+        labels = ascii_host.split(".")
+        valid_hostname = bool(ascii_host) and len(ascii_host) <= 253 and len(labels) >= 2
+        if valid_hostname:
+            for label in labels:
+                if not 1 <= len(label) <= 63 or label[0] == "-" or label[-1] == "-":
+                    valid_hostname = False
+                    break
+                if any(char not in string.ascii_lowercase + string.digits + "-" for char in label):
+                    valid_hostname = False
+                    break
+            else:
+                valid_hostname = 2 <= len(labels[-1]) <= 63
+        if not valid_hostname:
             raise ValueError("Hostname format is invalid")
         try:
             addresses = socket.getaddrinfo(ascii_host, port or (443 if parsed.scheme == "https" else 80),
