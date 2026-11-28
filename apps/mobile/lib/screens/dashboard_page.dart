@@ -163,6 +163,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           strings: strings,
           score: hasMeaningfulScore ? score.toInt() : null,
           totalScans: total,
+          threats: threats,
           healthVersion: _serviceVersion,
         ),
         if (_recommendations.isNotEmpty) ...[
@@ -577,12 +578,14 @@ class _ProtectionSummary extends StatelessWidget {
     required this.strings,
     required this.score,
     required this.totalScans,
+    required this.threats,
     required this.healthVersion,
   });
 
   final AppStrings strings;
   final int? score;
   final int totalScans;
+  final int threats;
   final String? healthVersion;
 
   @override
@@ -663,6 +666,32 @@ class _ProtectionSummary extends StatelessWidget {
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+              const SizedBox(height: GuardianSpace.md),
+              Row(
+                children: [
+                  Icon(
+                    threats == 0
+                        ? Icons.verified_user_outlined
+                        : Icons.warning_amber_rounded,
+                    size: 17,
+                    color: threats == 0
+                        ? GuardianColors.success
+                        : GuardianColors.warning,
+                  ),
+                  const SizedBox(width: GuardianSpace.sm),
+                  Text(
+                    threats == 0
+                        ? strings.noThreatsDetected
+                        : '$threats ${strings.threatsDetected.toLowerCase()}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: threats == 0
+                          ? GuardianColors.success
+                          : GuardianColors.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: GuardianSpace.md),
               Row(

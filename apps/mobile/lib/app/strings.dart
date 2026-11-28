@@ -94,6 +94,8 @@ class AppStrings {
   String get totalScans => _text('Total scans', 'Усього перевірок');
   String get threatsDetected =>
       _text('High-risk scans', 'Перевірки з високим ризиком');
+  String get noThreatsDetected =>
+      _text('No active threats detected', 'Активних загроз не виявлено');
   String get safeScans =>
       _text('Low-risk scans', 'Перевірки з низьким ризиком');
   String get scoreFormula => _text(

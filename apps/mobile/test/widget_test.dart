@@ -134,6 +134,18 @@ void main() {
       find.text('Review recently used account passwords.'),
       findsOneWidget,
     );
+    expect(find.text('2 перевірки з високим ризиком'), findsOneWidget);
+    expect(find.bySemanticsLabel('Огляд'), findsWidgets);
+  });
+
+  testWidgets('dashboard renders the shared workspace heading and motion safely', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    expect(find.text('AI GUARDIAN / SECURITY WORKSPACE'), findsOneWidget);
+    expect(find.byType(PageHeading), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('invalid URLs are rejected without an API request', (

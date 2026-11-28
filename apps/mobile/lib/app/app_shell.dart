@@ -125,7 +125,7 @@ class AppShell extends ConsumerWidget {
           ],
         ),
         drawer: Drawer(
-          width: 300,
+          width: (width * 0.86).clamp(280, 340),
           child: _NavigationPanel(
             selectedPath: location,
             expanded: true,
@@ -333,6 +333,10 @@ class _NavigationItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Tooltip(
         message: expanded ? '' : destination.label(strings),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: destination.label(strings),
         child: Material(
           color: background,
           borderRadius: BorderRadius.circular(GuardianRadius.small),
@@ -340,8 +344,9 @@ class _NavigationItem extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(GuardianRadius.small),
             hoverColor: selectedColor.withValues(alpha: 0.08),
+            focusColor: selectedColor.withValues(alpha: 0.14),
             child: SizedBox(
-              height: 46,
+              height: 48,
               child: Row(
                 children: [
                   if (selected)
@@ -380,6 +385,7 @@ class _NavigationItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

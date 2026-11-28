@@ -5,8 +5,8 @@ abstract final class GuardianColors {
   static const sidebar = Color(0xFF0D1220);
   static const surface = Color(0xFF121A2A);
   static const elevated = Color(0xFF192337);
-  static const violet = Color(0xFF8B5CF6);
-  static const cyan = Color(0xFF22C7F2);
+  static const violet = Color(0xFF5B8CFF);
+  static const cyan = Color(0xFF29D3C2);
   static const text = Color(0xFFF8FAFC);
   static const muted = Color(0xFF94A3B8);
   static const success = Color(0xFF22C55E);
@@ -156,6 +156,22 @@ abstract final class GuardianTheme {
         ),
         textStyle: const TextStyle(color: Colors.white),
       ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        foregroundColor: text,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: text,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
+      ),
+      focusColor: GuardianColors.cyan.withValues(alpha: 0.18),
+      hoverColor: GuardianColors.violet.withValues(alpha: 0.08),
+      splashFactory: InkSparkle.splashFactory,
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -187,6 +203,7 @@ class PageScaffold extends StatelessWidget {
           ? GuardianSpace.xl
           : GuardianSpace.xxl;
 
+      final reduceMotion = MediaQuery.disableAnimationsOf(context);
       return SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -205,7 +222,21 @@ class PageScaffold extends StatelessWidget {
                 children: [
                   PageHeading(title: title, subtitle: subtitle),
                   const SizedBox(height: GuardianSpace.xl),
-                  child,
+                  reduceMotion
+                      ? child
+                      : TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 8 * (1 - value)),
+                              child: child,
+                            ),
+                          ),
+                          child: child,
+                        ),
                 ],
               ),
             ),
@@ -226,6 +257,28 @@ class PageHeading extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      Row(
+        children: [
+          Container(
+            width: 28,
+            height: 4,
+            decoration: BoxDecoration(
+              color: GuardianColors.cyan,
+              borderRadius: BorderRadius.circular(GuardianRadius.pill),
+            ),
+          ),
+          const SizedBox(width: GuardianSpace.sm),
+          Text(
+            'AI GUARDIAN / SECURITY WORKSPACE',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: GuardianColors.cyan,
+              letterSpacing: 1.3,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: GuardianSpace.md),
       Text(
         title,
         style:
@@ -303,8 +356,22 @@ class SurfaceCard extends StatelessWidget {
               ]
             : null,
       ),
-      padding: padding,
-      child: child,
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(GuardianRadius.medium),
+        child: Stack(
+          children: [
+            if (accent != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 3, color: accent),
+              ),
+            Padding(padding: padding, child: child),
+          ],
+        ),
+      ),
     );
   }
 }
