@@ -103,8 +103,11 @@ jobs:
       uses: gradle/actions/setup-gradle@v6
       with:
         gradle-version: '8.14'
+        cache-provider: enhanced
         cache-read-only: false
         cache-overwrite-existing: true
+        gradle-home-cache-excludes: |
+          caches/build-cache-1
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -112,6 +115,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
+        db-location: ${{ runner.temp }}/codeql_databases
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
@@ -119,21 +123,60 @@ jobs:
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
-    - name: Build Android debug APK for CodeQL
+    - name: Build Android debug variant for CodeQL
       if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
       shell: bash
-      working-directory: apps/mobile
+      working-directory: apps/mobile/android
       run: |
         # Retry only Maven HTTP 429 responses, with bounded exponential backoff.
         # All other build errors fail immediately and the final 429 remains fatal.
         max_attempts=4
+        echo 'Android Java/Kotlin source files:'
+        find app/src/main -type f \( -name '*.kt' -o -name '*.java' \) -print
         for attempt in $(seq 1 "$max_attempts"); do
           log_file="$(mktemp)"
-          if flutter build apk --debug --no-pub 2>&1 | tee "$log_file"; then
+          gradle --no-daemon \
+            clean :app:assembleDebug \
+            --no-build-cache \
+            --rerun-tasks \
+            --no-configuration-cache \
+            "-Pkotlin.compiler.execution.strategy=in-process" \
+            "-Dkotlin.caching.enabled=false" \
+            --info 2>&1 | tee "$log_file"
+          build_status=${PIPESTATUS[0]}
+
+          if [ "$build_status" -eq 0 ]; then
+            kotlin_task_line="$(grep -E '^> Task :app:compileDebugKotlin([[:space:]]|$)' "$log_file" | tail -n 1 || true)"
+            if [ -z "$kotlin_task_line" ]; then
+              echo 'Gradle did not report :app:compileDebugKotlin; refusing to treat the build as CodeQL coverage.' >&2
+              rm -f "$log_file"
+              exit 1
+            fi
+            if printf '%s\n' "$kotlin_task_line" | grep -Eq 'UP-TO-DATE|FROM-CACHE|NO-SOURCE'; then
+              echo "Kotlin compilation was not executed: $kotlin_task_line" >&2
+              rm -f "$log_file"
+              exit 1
+            fi
+            echo "Kotlin compile task executed: $kotlin_task_line"
+
+            java_task_line="$(grep -E '^> Task :app:compileDebugJavaWithJavac([[:space:]]|$)' "$log_file" | tail -n 1 || true)"
+            if [ -n "$java_task_line" ]; then
+              if printf '%s\n' "$java_task_line" | grep -Eq 'UP-TO-DATE|FROM-CACHE'; then
+                echo "Java compile task was not executed: $java_task_line" >&2
+                rm -f "$log_file"
+                exit 1
+              fi
+              if printf '%s\n' "$java_task_line" | grep -q 'NO-SOURCE'; then
+                echo "Java compile task has no Java sources: $java_task_line"
+              else
+                echo "Java compile task executed: $java_task_line"
+              fi
+            else
+              echo 'Gradle did not register :app:compileDebugJavaWithJavac; no Java compile task to verify.'
+            fi
+
             rm -f "$log_file"
             exit 0
-          else
-            build_status=${PIPESTATUS[0]}
           fi
 
           if ! grep -Eq 'Received status code 429|HTTP 429|status code: 429' "$log_file"; then
@@ -151,6 +194,22 @@ jobs:
           echo "Maven returned HTTP 429; retrying in ${delay}s (attempt $((attempt + 1))/$max_attempts)." >&2
           sleep "$delay"
         done
+
+    - name: Verify CodeQL Java/Kotlin extraction
+      if: matrix.language == 'java-kotlin' && matrix.build-mode == 'manual'
+      shell: bash
+      run: |
+        database_dir="${RUNNER_TEMP}/codeql_databases/java"
+        if [ ! -d "$database_dir" ]; then
+          echo "CodeQL Java database was not created at $database_dir." >&2
+          exit 1
+        fi
+        trap_count="$(find "$database_dir" -type f -name '*.trap*' -size +0c | wc -l)"
+        echo "Non-empty CodeQL Java/Kotlin TRAP files: $trap_count"
+        if [ "$trap_count" -eq 0 ]; then
+          echo 'CodeQL Java/Kotlin database contains no extracted source TRAP files.' >&2
+          exit 1
+        fi
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
