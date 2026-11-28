@@ -28,6 +28,7 @@ Improve the existing Flutter product shell and core security screens with a cohe
 - [ ] Run release builds, commit, push feature branch, open PR, and verify GitHub Actions.
 
 ## Risks and mitigations
+
 | Risk | Impact | Mitigation |
 |---|---|---|
 | UI changes break existing text-based widget tests | Medium | Preserve route labels and API-backed semantics; run tests after each screen group. |
